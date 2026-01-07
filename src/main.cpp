@@ -425,7 +425,8 @@ int main()
 
     // Create output format context for RTSP
     AVFormatContext *outFormatCtx = nullptr;
-    const char *rtspURL = "rtsp://localhost:8554/camera1";
+    string rtspURLStr = "rtsp://localhost:8554/" + CAMERA_ID;
+    const char *rtspURL = rtspURLStr.c_str();
 
     avformat_alloc_output_context2(&outFormatCtx, nullptr, "rtsp", rtspURL);
     if (!outFormatCtx) {
