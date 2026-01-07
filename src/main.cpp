@@ -339,9 +339,10 @@ int main()
     );
     g_mdns_broadcaster = &mdns_broadcaster;
     
-    if(!mdns_broadcaster.start()) {
-        cerr << "[ERROR] Failed to start mDNS broadcaster" << endl;
-        return -1;
+    bool mdns_available = mdns_broadcaster.start();
+    if(!mdns_available) {
+        cerr << "[WARNING] mDNS broadcaster failed to start - continuing without discovery" << endl;
+        cerr << "[WARNING] Camera will still stream but won't be auto-discovered" << endl;
     }
     
     // Setup MQTT
@@ -355,6 +356,7 @@ int main()
     connOpts.set_automatic_reconnect(true);  // Auto-reconnect on connection loss
     connOpts.set_automatic_reconnect(1, 30); // Min 1s, max 30s backoff
 
+    bool mqtt_connected = false;
     try {
         cout << "[MQTT] Connecting to broker..." << endl;
         mqtt_client.connect(connOpts)->wait();
@@ -366,16 +368,20 @@ int main()
 
         // Announce online
         mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "online", 0, false);
-        mdns_broadcaster.update_status("online");
+        if(mdns_available) mdns_broadcaster.update_status("online");
+        mqtt_connected = true;
 
     } catch (const mqtt::exception& exc) {
-        cerr << "[MQTT] Error: " << exc.what() << endl;
-        mdns_broadcaster.update_status("error");
-        return -1;
+        cerr << "[MQTT] Warning: " << exc.what() << endl;
+        cerr << "[MQTT] Continuing without MQTT - no remote control available" << endl;
+        if(mdns_available) mdns_broadcaster.update_status("streaming");
     }
 
-    // Start heartbeat thread
-    thread heartbeat(mqtt_heartbeat_thread, ref(mqtt_client));
+    // Start heartbeat thread only if MQTT is connected
+    thread heartbeat;
+    if(mqtt_connected) {
+        heartbeat = thread(mqtt_heartbeat_thread, ref(mqtt_client));
+    }
 
     // Open camera
     cout << "[Camera] Opening camera device /dev/video" << CAMERA_DEVICE_INDEX << "..." << endl;
@@ -395,13 +401,15 @@ int main()
         cerr << endl;
         cerr << "========================================" << endl;
         cerr << endl;
-        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_camera", 0, false);
-        mdns_broadcaster.update_status("error_no_camera");
+        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_camera", 0, false);
+        if(mdns_available) mdns_broadcaster.update_status("error_no_camera");
         
         // Clean shutdown
         running = false;
-        mqtt_client.disconnect()->wait();
-        heartbeat.join();
+        if(mqtt_connected) {
+            mqtt_client.disconnect()->wait();
+            heartbeat.join();
+        }
         return -1;
     }
 
@@ -482,15 +490,15 @@ int main()
             cerr << endl;
             
             // Clean shutdown
-            mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_rtsp_server", 0, false);
-            mdns_broadcaster.update_status("error");
+            if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_rtsp_server", 0, false);
+            if(mdns_available) mdns_broadcaster.update_status("error");
             running = false;
-            heartbeat.join();
+            if(mqtt_connected) heartbeat.join();
             camera.release();
             avcodec_free_context(&codecCtx);
             avformat_free_context(outFormatCtx);
-            mqtt_client.disconnect()->wait();
-            mdns_broadcaster.stop();
+            if(mqtt_connected) mqtt_client.disconnect()->wait();
+            if(mdns_available) mdns_broadcaster.stop();
             return -1;
         }
     }
@@ -513,22 +521,22 @@ int main()
         cerr << endl;
         
         // Clean shutdown
-        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_stream_init", 0, false);
-        mdns_broadcaster.update_status("error");
+        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_stream_init", 0, false);
+        if(mdns_available) mdns_broadcaster.update_status("error");
         running = false;
-        heartbeat.join();
+        if(mqtt_connected) heartbeat.join();
         camera.release();
         avcodec_free_context(&codecCtx);
         if (outFormatCtx->pb) avio_closep(&outFormatCtx->pb);
         avformat_free_context(outFormatCtx);
-        mqtt_client.disconnect()->wait();
-        mdns_broadcaster.stop();
+        if(mqtt_connected) mqtt_client.disconnect()->wait();
+        if(mdns_available) mdns_broadcaster.stop();
         return -1;
     }
 
     cout << "[Stream] Streaming to: " << rtspURL << endl;
-    mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "streaming", 0, false);
-    mdns_broadcaster.update_status("streaming");
+    if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "streaming", 0, false);
+    if(mdns_available) mdns_broadcaster.update_status("streaming");
 
     AVFrame *frame = av_frame_alloc();
     frame->format = codecCtx->pix_fmt;
@@ -613,10 +621,12 @@ int main()
 
 cleanup:
     // Update status to offline
-    mdns_broadcaster.update_status("offline");
-    mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "offline", 0, false);
-    mqtt_client.disconnect()->wait();
-    heartbeat.join();
+    if(mdns_available) mdns_broadcaster.update_status("offline");
+    if(mqtt_connected) {
+        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "offline", 0, false);
+        mqtt_client.disconnect()->wait();
+        heartbeat.join();
+    }
 
     av_write_trailer(outFormatCtx);
     av_packet_free(&pkt);

@@ -11,6 +11,19 @@ mkdir -p /var/run/avahi-daemon
 avahi-daemon -D 2>/dev/null || echo "[Warning] Avahi daemon failed to start"
 sleep 1
 
+# Start Mosquitto MQTT broker
+echo "[OpenSentry Node] Starting Mosquitto MQTT broker..."
+mosquitto -c /etc/mosquitto/mosquitto.conf &
+MOSQUITTO_PID=$!
+sleep 1
+
+# Check if Mosquitto started
+if kill -0 $MOSQUITTO_PID 2>/dev/null; then
+    echo "[OpenSentry Node] Mosquitto started (PID: $MOSQUITTO_PID)"
+else
+    echo "[Warning] Mosquitto failed to start - continuing without local MQTT"
+fi
+
 echo "[OpenSentry Node] Starting MediaMTX RTSP server..."
 mediamtx /etc/mediamtx.yml &
 MEDIAMTX_PID=$!
@@ -35,6 +48,7 @@ echo "[OpenSentry Node] Camera Device: $CAMERA_DEVICE"
 cleanup() {
     echo "[OpenSentry Node] Shutting down..."
     kill $MEDIAMTX_PID 2>/dev/null || true
+    kill $MOSQUITTO_PID 2>/dev/null || true
     exit 0
 }
 trap cleanup SIGTERM SIGINT

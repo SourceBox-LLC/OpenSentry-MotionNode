@@ -12,15 +12,16 @@ A self-contained camera node for the OpenSentry surveillance system. Each node c
 
 - **RTSP Streaming** - H.264 encoded video stream via bundled MediaMTX
 - **mDNS Discovery** - Automatic detection by OpenSentry Command Center
-- **MQTT Control** - Remote start/stop/shutdown commands
-- **Docker Ready** - Self-contained deployment with all dependencies
+- **MQTT Control** - Remote start/stop/shutdown commands (bundled Mosquitto broker)
+- **Fully Self-Contained** - Docker deployment with MediaMTX + Mosquitto bundled
+- **Multi-Architecture** - Auto-detects amd64, arm64 (Raspberry Pi 4/5), armv7
 
 ## Quick Start (Docker)
 
 ### Prerequisites
 - Docker and Docker Compose installed
 - USB webcam or other V4L2-compatible camera
-- MQTT broker running (e.g., Mosquitto)
+- No external MQTT broker needed (Mosquitto is bundled)
 
 ### 1. Configure
 
@@ -89,6 +90,7 @@ Supported architectures:
 
 | Port | Protocol | Description |
 |------|----------|-------------|
+| 1883 | MQTT | Bundled Mosquitto broker |
 | 8554 | RTSP | Main video stream |
 | 1935 | RTMP | Optional RTMP stream |
 | 8888 | HTTP | HLS stream (optional) |

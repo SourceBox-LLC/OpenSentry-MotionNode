@@ -54,6 +54,8 @@ RUN apt-get update && apt-get install -y \
     libpaho-mqttpp3-1 \
     avahi-daemon \
     dbus \
+    mosquitto \
+    mosquitto-clients \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -86,17 +88,21 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Copy MediaMTX config
 COPY mediamtx.yml /etc/mediamtx.yml
 
+# Copy Mosquitto config
+COPY mosquitto.conf /etc/mosquitto/mosquitto.conf
+
 # Expose ports
+# 1883 - MQTT (bundled Mosquitto broker)
 # 8554 - RTSP
 # 1935 - RTMP (optional)
 # 8888 - HLS (optional)
 # 8889 - WebRTC (optional)
-EXPOSE 8554 1935 8888 8889
+EXPOSE 1883 8554 1935 8888 8889
 
 # Environment variables for configuration
 ENV CAMERA_ID=camera1
 ENV CAMERA_NAME="OpenSentry Camera"
-ENV MQTT_SERVER=tcp://host.docker.internal:1883
+ENV MQTT_SERVER=tcp://localhost:1883
 ENV CAMERA_DEVICE=/dev/video0
 
 ENTRYPOINT ["docker-entrypoint.sh"]

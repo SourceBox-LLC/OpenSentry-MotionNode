@@ -16,7 +16,7 @@ services:
     environment:
       - CAMERA_ID=${CAMERA_ID:-camera1}
       - CAMERA_NAME=${CAMERA_NAME:-OpenSentry Camera}
-      - MQTT_SERVER=${MQTT_SERVER:-tcp://localhost:1883}
+      - MQTT_SERVER=${MQTT_SERVER:-tcp://127.0.0.1:1883}
       - CAMERA_DEVICE=${CAMERA_DEVICE:-/dev/video0}
     
     # Device access for webcam
