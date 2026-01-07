@@ -30,7 +30,5 @@ paths:
     # Read authentication - viewers must authenticate
     readUser: $RTSP_USERNAME
     readPass: $RTSP_PASSWORD
-    # Publish authentication - only local node can publish
-    publishUser:
-    publishPass:
+    # Publish restricted to localhost IPs (no auth needed for local)
     publishIPs: [127.0.0.1, ::1]
