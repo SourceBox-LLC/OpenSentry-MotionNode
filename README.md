@@ -64,14 +64,16 @@ CAMERA_ID=camera2 RTSP_PORT=8555 CAMERA_DEVICE=/dev/video1 docker-compose up -d
 
 ## Raspberry Pi Deployment
 
-For ARM64 devices (Raspberry Pi 4, etc.), update the build args:
+The Docker image **automatically detects** ARM64 architecture. Just run:
 
-```yaml
-# docker-compose.yml
-build:
-  args:
-    TARGETARCH: "arm64"
+```bash
+docker compose up -d --build
 ```
+
+Supported architectures:
+- **amd64** - Standard x86_64 (Intel/AMD)
+- **arm64v8** - Raspberry Pi 4, Pi 5, ARM servers
+- **armv7** - Raspberry Pi 3, older ARM devices
 
 ## Environment Variables
 

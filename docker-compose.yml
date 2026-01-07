@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       args:
         MEDIAMTX_VERSION: "1.4.2"
-        TARGETARCH: "amd64"  # Change to arm64 for Raspberry Pi
+        # Architecture is auto-detected - no need to specify
     container_name: opensentry-node-${CAMERA_ID:-camera1}
     # Only restart on failure, not on clean shutdown (exit 0)
     restart: on-failure

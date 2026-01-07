@@ -58,11 +58,22 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install MediaMTX
+# Auto-detect architecture: map Docker's TARGETPLATFORM to MediaMTX naming
 ARG MEDIAMTX_VERSION=1.4.2
-ARG TARGETARCH=amd64
-RUN wget -q https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_${TARGETARCH}.tar.gz \
-    && tar -xzf mediamtx_v${MEDIAMTX_VERSION}_linux_${TARGETARCH}.tar.gz -C /usr/local/bin mediamtx \
-    && rm mediamtx_v${MEDIAMTX_VERSION}_linux_${TARGETARCH}.tar.gz \
+ARG TARGETARCH
+RUN ARCH=$(dpkg --print-architecture) && \
+    echo "Detected architecture: $ARCH" && \
+    if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then \
+        MTX_ARCH="arm64v8"; \
+    elif [ "$ARCH" = "armhf" ] || [ "$ARCH" = "armv7l" ]; then \
+        MTX_ARCH="armv7"; \
+    else \
+        MTX_ARCH="amd64"; \
+    fi && \
+    echo "Downloading MediaMTX for: $MTX_ARCH" && \
+    wget -q https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_${MTX_ARCH}.tar.gz \
+    && tar -xzf mediamtx_v${MEDIAMTX_VERSION}_linux_${MTX_ARCH}.tar.gz -C /usr/local/bin mediamtx \
+    && rm mediamtx_v${MEDIAMTX_VERSION}_linux_${MTX_ARCH}.tar.gz \
     && chmod +x /usr/local/bin/mediamtx
 
 # Copy built application from builder stage
