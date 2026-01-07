@@ -1,0 +1,29 @@
+# Build artifacts
+cmake-build-*/
+build/
+bin/
+*.o
+*.a
+*.so
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files (keep .env.example)
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak

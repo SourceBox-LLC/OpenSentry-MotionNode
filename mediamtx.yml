@@ -1,0 +1,34 @@
+# MediaMTX Configuration for OpenSentry Node
+
+# General settings
+logLevel: info
+logDestinations: [stdout]
+
+# RTSP server
+rtsp: yes
+protocols: [tcp]
+rtspAddress: :8554
+
+# RTMP server  
+rtmp: yes
+rtmpAddress: :1935
+
+# HLS server
+hls: yes
+hlsAddress: :8888
+
+# WebRTC server
+webrtc: yes
+webrtcAddress: :8889
+
+# Allow any path to be published/read
+paths:
+  all:
+    # Allow publishing from any source
+    source: publisher
+    # Allow reading by anyone
+    readUser:
+    readPass:
+    # Allow publishing by anyone
+    publishUser:
+    publishPass:
