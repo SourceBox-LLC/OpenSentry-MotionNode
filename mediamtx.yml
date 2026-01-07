@@ -22,13 +22,11 @@ webrtc: yes
 webrtcAddress: :8889
 
 # Path configuration with authentication
-# Credentials are injected via environment variables
 paths:
   all:
-    # Allow publishing from localhost only (the camera node)
     source: publisher
-    # Read authentication - viewers must authenticate
-    readUser: $RTSP_USERNAME
-    readPass: $RTSP_PASSWORD
-    # Publish restricted to localhost IPs (no auth needed for local)
-    publishIPs: [127.0.0.1, ::1]
+    readUser: "$RTSP_USERNAME"
+    readPass: "$RTSP_PASSWORD"
+    publishIPs:
+      - 127.0.0.1
+      - "::1"
