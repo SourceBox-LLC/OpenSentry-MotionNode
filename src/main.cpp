@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <sstream>
+#include <iomanip>
 
 // mDNS includes (Avahi)
 #include <avahi-client/client.h>
@@ -26,6 +27,7 @@ extern "C" {
 }
 
 #include "mqtt/async_client.h"
+#include <openssl/sha.h>
 
 using namespace cv;
 using namespace std;
@@ -38,6 +40,20 @@ atomic<bool> running(true);
 string getEnvOrDefault(const char* name, const string& defaultValue) {
     const char* value = getenv(name);
     return value ? string(value) : defaultValue;
+}
+
+// Derive a credential from a secret and service name using SHA256
+string deriveCredential(const string& secret, const string& service) {
+    string input = secret + ":" + service;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char*>(input.c_str()), input.length(), hash);
+    
+    // Convert first 16 bytes to hex string (32 chars)
+    stringstream ss;
+    for (int i = 0; i < 16; i++) {
+        ss << hex << setfill('0') << setw(2) << (int)hash[i];
+    }
+    return ss.str();
 }
 
 // These will be initialized in main()
@@ -314,9 +330,18 @@ int main()
     CAMERA_ID = getEnvOrDefault("CAMERA_ID", "camera1");
     CAMERA_NAME = getEnvOrDefault("CAMERA_NAME", "OpenSentry Camera 1");
     MQTT_SERVER = getEnvOrDefault("MQTT_SERVER", "tcp://localhost:1883");
-    MQTT_USERNAME = getEnvOrDefault("MQTT_USERNAME", "opensentry");
-    MQTT_PASSWORD = getEnvOrDefault("MQTT_PASSWORD", "opensentry");
     CLIENT_ID = "opensentry_node_" + CAMERA_ID;
+    
+    // Credential derivation: use OPENSENTRY_SECRET if set, otherwise fall back to individual credentials
+    string opensentry_secret = getEnvOrDefault("OPENSENTRY_SECRET", "");
+    if (!opensentry_secret.empty()) {
+        cout << "[Config] Using derived credentials from OPENSENTRY_SECRET" << endl;
+        MQTT_USERNAME = "opensentry";
+        MQTT_PASSWORD = deriveCredential(opensentry_secret, "mqtt");
+    } else {
+        MQTT_USERNAME = getEnvOrDefault("MQTT_USERNAME", "opensentry");
+        MQTT_PASSWORD = getEnvOrDefault("MQTT_PASSWORD", "opensentry");
+    }
     
     // Parse camera device - extract index from /dev/video0 format or use directly
     string cameraDeviceStr = getEnvOrDefault("CAMERA_DEVICE", "/dev/video0");

@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libavahi-compat-libdnssd-dev \
     libpaho-mqtt-dev \
     libpaho-mqttpp-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy source code
@@ -52,6 +53,7 @@ RUN apt-get update && apt-get install -y \
     libavahi-common3 \
     libpaho-mqtt1.3 \
     libpaho-mqttpp3-1 \
+    libssl3 \
     avahi-daemon \
     dbus \
     mosquitto \

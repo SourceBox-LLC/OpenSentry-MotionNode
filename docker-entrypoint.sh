@@ -1,6 +1,36 @@
 #!/bin/bash
 set -e
 
+# ============================================================================
+# Credential Derivation from Single Secret
+# ============================================================================
+# If OPENSENTRY_SECRET is set, derive all credentials from it
+# Otherwise fall back to individual env vars or defaults
+derive_credential() {
+    local secret="$1"
+    local service="$2"
+    # Derive a 32-char password from secret + service name
+    echo -n "${secret}:${service}" | sha256sum | cut -c1-32
+}
+
+if [ -n "$OPENSENTRY_SECRET" ]; then
+    echo "[OpenSentry Node] Using derived credentials from OPENSENTRY_SECRET"
+    MQTT_USER="opensentry"
+    MQTT_PASS=$(derive_credential "$OPENSENTRY_SECRET" "mqtt")
+    export RTSP_USERNAME="opensentry"
+    export RTSP_PASSWORD=$(derive_credential "$OPENSENTRY_SECRET" "rtsp")
+else
+    echo "[OpenSentry Node] Using individual credentials (legacy mode)"
+    MQTT_USER="${MQTT_USERNAME:-opensentry}"
+    MQTT_PASS="${MQTT_PASSWORD:-opensentry}"
+    export RTSP_USERNAME="${RTSP_USERNAME:-opensentry}"
+    export RTSP_PASSWORD="${RTSP_PASSWORD:-opensentry}"
+fi
+
+# ============================================================================
+# Service Startup
+# ============================================================================
+
 # Start D-Bus daemon (required for Avahi)
 mkdir -p /var/run/dbus
 dbus-daemon --system --fork 2>/dev/null || true
@@ -13,8 +43,6 @@ sleep 1
 
 # Generate MQTT password file
 echo "[OpenSentry Node] Setting up MQTT authentication..."
-MQTT_USER="${MQTT_USERNAME:-opensentry}"
-MQTT_PASS="${MQTT_PASSWORD:-opensentry}"
 # Create password file using mosquitto_passwd
 touch /etc/mosquitto/passwd
 mosquitto_passwd -b /etc/mosquitto/passwd "$MQTT_USER" "$MQTT_PASS"
@@ -33,9 +61,6 @@ else
     echo "[Warning] Mosquitto failed to start - continuing without local MQTT"
 fi
 
-# Set RTSP credentials for MediaMTX
-export RTSP_USERNAME="${RTSP_USERNAME:-opensentry}"
-export RTSP_PASSWORD="${RTSP_PASSWORD:-opensentry}"
 echo "[OpenSentry Node] RTSP authentication enabled for user '$RTSP_USERNAME'"
 
 echo "[OpenSentry Node] Starting MediaMTX RTSP server..."

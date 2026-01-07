@@ -23,6 +23,9 @@ pkg_check_modules(AVAHI REQUIRED avahi-client)
 find_library(PAHO_MQTT_C paho-mqtt3a)
 find_library(PAHO_MQTT_CPP paho-mqttpp3)
 
+# Find OpenSSL for credential derivation
+find_package(OpenSSL REQUIRED)
+
 add_executable(OpenSentry_Node src/main.cpp)
 
 # Include directories
@@ -37,6 +40,7 @@ target_link_libraries(OpenSentry_Node
         ${PAHO_MQTT_C}
         ${PAHO_MQTT_CPP}
         ${AVAHI_LIBRARIES}
+        OpenSSL::Crypto
         pthread
 )
 
