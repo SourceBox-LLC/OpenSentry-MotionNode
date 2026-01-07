@@ -83,12 +83,13 @@ Supported architectures:
 | `CAMERA_ID` | `camera1` | Unique identifier for this camera |
 | `CAMERA_NAME` | `OpenSentry Camera` | Display name in Command Center |
 | `MQTT_SERVER` | `tcp://localhost:1883` | MQTT broker address |
-| `MQTT_USERNAME` | `opensentry` | MQTT authentication username |
-| `MQTT_PASSWORD` | `opensentry` | MQTT authentication password |
-| `RTSP_USERNAME` | `opensentry` | RTSP viewer authentication username |
-| `RTSP_PASSWORD` | `opensentry` | RTSP viewer authentication password |
 | `CAMERA_DEVICE` | `/dev/video0` | Camera device path |
 | `RTSP_PORT` | `8554` | RTSP server port |
+| `OPENSENTRY_SECRET` | *(none)* | Single secret for all credentials (recommended) |
+| `MQTT_USERNAME` | `opensentry` | MQTT username (legacy mode) |
+| `MQTT_PASSWORD` | `opensentry` | MQTT password (legacy mode) |
+| `RTSP_USERNAME` | `opensentry` | RTSP username (legacy mode) |
+| `RTSP_PASSWORD` | `opensentry` | RTSP password (legacy mode) |
 
 ## Ports
 
@@ -165,17 +166,31 @@ The OpenSentry Node includes authentication for all services:
 
 | Service | Protection | Default Credentials |
 |---------|-----------|---------------------|
-| **MQTT** | Username/password (Mosquitto) | `opensentry` / `opensentry` |
-| **RTSP** | Username/password (MediaMTX) | `opensentry` / `opensentry` |
+| **MQTT** | Username/password (Mosquitto) | Derived from secret |
+| **RTSP** | Username/password (MediaMTX) | Derived from secret |
 
-### Changing Credentials
+### Single Secret Mode (Recommended)
 
-Set in `.env` file or environment variables:
+Set ONE secret that derives all credentials automatically:
 
 ```bash
-MQTT_USERNAME=your_mqtt_user
+# Generate a secret
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Add to .env on ALL Nodes and Command Center
+OPENSENTRY_SECRET=your-generated-64-char-secret
+```
+
+The system derives MQTT and RTSP passwords using SHA256 - no need to manage multiple passwords!
+
+### Legacy Mode
+
+If `OPENSENTRY_SECRET` is not set, falls back to individual credentials:
+
+```bash
+MQTT_USERNAME=opensentry
 MQTT_PASSWORD=your_mqtt_password
-RTSP_USERNAME=your_rtsp_user
+RTSP_USERNAME=opensentry
 RTSP_PASSWORD=your_rtsp_password
 ```
 
