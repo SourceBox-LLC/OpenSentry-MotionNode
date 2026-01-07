@@ -42,6 +42,8 @@ string getEnvOrDefault(const char* name, const string& defaultValue) {
 
 // These will be initialized in main()
 string MQTT_SERVER;
+string MQTT_USERNAME;
+string MQTT_PASSWORD;
 string CLIENT_ID;
 string CAMERA_ID;
 string CAMERA_NAME;
@@ -312,6 +314,8 @@ int main()
     CAMERA_ID = getEnvOrDefault("CAMERA_ID", "camera1");
     CAMERA_NAME = getEnvOrDefault("CAMERA_NAME", "OpenSentry Camera 1");
     MQTT_SERVER = getEnvOrDefault("MQTT_SERVER", "tcp://localhost:1883");
+    MQTT_USERNAME = getEnvOrDefault("MQTT_USERNAME", "opensentry");
+    MQTT_PASSWORD = getEnvOrDefault("MQTT_PASSWORD", "opensentry");
     CLIENT_ID = "opensentry_node_" + CAMERA_ID;
     
     // Parse camera device - extract index from /dev/video0 format or use directly
@@ -355,6 +359,8 @@ int main()
     connOpts.set_clean_session(true);
     connOpts.set_automatic_reconnect(true);  // Auto-reconnect on connection loss
     connOpts.set_automatic_reconnect(1, 30); // Min 1s, max 30s backoff
+    connOpts.set_user_name(MQTT_USERNAME);
+    connOpts.set_password(MQTT_PASSWORD);
 
     bool mqtt_connected = false;
     try {

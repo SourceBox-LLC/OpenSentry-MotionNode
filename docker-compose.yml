@@ -17,6 +17,10 @@ services:
       - CAMERA_ID=${CAMERA_ID:-camera1}
       - CAMERA_NAME=${CAMERA_NAME:-OpenSentry Camera}
       - MQTT_SERVER=${MQTT_SERVER:-tcp://127.0.0.1:1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-opensentry}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-opensentry}
+      - RTSP_USERNAME=${RTSP_USERNAME:-opensentry}
+      - RTSP_PASSWORD=${RTSP_PASSWORD:-opensentry}
       - CAMERA_DEVICE=${CAMERA_DEVICE:-/dev/video0}
     
     # Device access for webcam

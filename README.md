@@ -83,6 +83,10 @@ Supported architectures:
 | `CAMERA_ID` | `camera1` | Unique identifier for this camera |
 | `CAMERA_NAME` | `OpenSentry Camera` | Display name in Command Center |
 | `MQTT_SERVER` | `tcp://localhost:1883` | MQTT broker address |
+| `MQTT_USERNAME` | `opensentry` | MQTT authentication username |
+| `MQTT_PASSWORD` | `opensentry` | MQTT authentication password |
+| `RTSP_USERNAME` | `opensentry` | RTSP viewer authentication username |
+| `RTSP_PASSWORD` | `opensentry` | RTSP viewer authentication password |
 | `CAMERA_DEVICE` | `/dev/video0` | Camera device path |
 | `RTSP_PORT` | `8554` | RTSP server port |
 
@@ -154,6 +158,28 @@ CAMERA_ID=camera1 CAMERA_NAME="My Camera" ./OpenSentry_Node
           ▼                   ▼
     Command Center      RTSP Clients
 ```
+
+## Security
+
+The OpenSentry Node includes authentication for all services:
+
+| Service | Protection | Default Credentials |
+|---------|-----------|---------------------|
+| **MQTT** | Username/password (Mosquitto) | `opensentry` / `opensentry` |
+| **RTSP** | Username/password (MediaMTX) | `opensentry` / `opensentry` |
+
+### Changing Credentials
+
+Set in `.env` file or environment variables:
+
+```bash
+MQTT_USERNAME=your_mqtt_user
+MQTT_PASSWORD=your_mqtt_password
+RTSP_USERNAME=your_rtsp_user
+RTSP_PASSWORD=your_rtsp_password
+```
+
+**Important:** Credentials must match between Node and Command Center!
 
 ## Troubleshooting
 

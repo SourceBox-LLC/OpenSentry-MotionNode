@@ -11,6 +11,15 @@ mkdir -p /var/run/avahi-daemon
 avahi-daemon -D 2>/dev/null || echo "[Warning] Avahi daemon failed to start"
 sleep 1
 
+# Generate MQTT password file
+echo "[OpenSentry Node] Setting up MQTT authentication..."
+MQTT_USER="${MQTT_USERNAME:-opensentry}"
+MQTT_PASS="${MQTT_PASSWORD:-opensentry}"
+# Create password file using mosquitto_passwd
+touch /etc/mosquitto/passwd
+mosquitto_passwd -b /etc/mosquitto/passwd "$MQTT_USER" "$MQTT_PASS"
+echo "[OpenSentry Node] MQTT user '$MQTT_USER' configured"
+
 # Start Mosquitto MQTT broker
 echo "[OpenSentry Node] Starting Mosquitto MQTT broker..."
 mosquitto -c /etc/mosquitto/mosquitto.conf &
@@ -23,6 +32,11 @@ if kill -0 $MOSQUITTO_PID 2>/dev/null; then
 else
     echo "[Warning] Mosquitto failed to start - continuing without local MQTT"
 fi
+
+# Set RTSP credentials for MediaMTX
+export RTSP_USERNAME="${RTSP_USERNAME:-opensentry}"
+export RTSP_PASSWORD="${RTSP_PASSWORD:-opensentry}"
+echo "[OpenSentry Node] RTSP authentication enabled for user '$RTSP_USERNAME'"
 
 echo "[OpenSentry Node] Starting MediaMTX RTSP server..."
 mediamtx /etc/mediamtx.yml &
