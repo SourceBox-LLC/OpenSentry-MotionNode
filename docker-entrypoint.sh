@@ -61,10 +61,33 @@ else
     echo "[Warning] Mosquitto failed to start - continuing without local MQTT"
 fi
 
+# Generate MediaMTX config with credentials baked in (env var substitution can be unreliable)
+cat > /tmp/mediamtx.yml << EOF
+logLevel: info
+logDestinations: [stdout]
+rtsp: yes
+protocols: [tcp]
+rtspAddress: :8554
+rtmp: yes
+rtmpAddress: :1935
+hls: yes
+hlsAddress: :8888
+webrtc: yes
+webrtcAddress: :8889
+paths:
+  all:
+    source: publisher
+    readUser: "${RTSP_USERNAME}"
+    readPass: "${RTSP_PASSWORD}"
+    publishIPs:
+      - 127.0.0.1
+      - "::1"
+EOF
+
 echo "[OpenSentry Node] RTSP authentication enabled for user '$RTSP_USERNAME'"
 
 echo "[OpenSentry Node] Starting MediaMTX RTSP server..."
-mediamtx /etc/mediamtx.yml &
+mediamtx /tmp/mediamtx.yml &
 MEDIAMTX_PID=$!
 
 # Wait for MediaMTX to be ready
