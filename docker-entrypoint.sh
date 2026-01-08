@@ -2,6 +2,16 @@
 set -e
 
 # ============================================================================
+# Auto-generate Camera ID from hostname if not explicitly set
+# ============================================================================
+# This ensures each device gets a unique camera ID by default
+if [ -z "$CAMERA_ID" ] || [ "$CAMERA_ID" = "camera1" ]; then
+    CAMERA_ID="$(hostname)"
+    export CAMERA_ID
+    echo "[OpenSentry Node] Auto-generated CAMERA_ID from hostname: $CAMERA_ID"
+fi
+
+# ============================================================================
 # Credential Derivation from Single Secret
 # ============================================================================
 # If OPENSENTRY_SECRET is set, derive all credentials from it

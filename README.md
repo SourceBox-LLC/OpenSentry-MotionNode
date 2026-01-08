@@ -80,7 +80,7 @@ Supported architectures:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CAMERA_ID` | `camera1` | Unique identifier for this camera |
+| `CAMERA_ID` | *(hostname)* | Unique identifier - auto-generated from hostname if not set |
 | `CAMERA_NAME` | `OpenSentry Camera` | Display name in Command Center |
 | `MQTT_SERVER` | `tcp://localhost:1883` | MQTT broker address |
 | `CAMERA_DEVICE` | `/dev/video0` | Camera device path |
