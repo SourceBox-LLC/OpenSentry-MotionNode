@@ -1,51 +1,19 @@
+# OpenSentry Camera Node
+# Quick Start: docker compose up --build
+# Stream URL: rtsp://localhost:8554/<camera_id>
+
 services:
   opensentry-node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        MEDIAMTX_VERSION: "1.4.2"
-        # Architecture is auto-detected - no need to specify
+    build: .
     container_name: opensentry-node-${CAMERA_ID:-camera1}
-    # Only restart on failure, not on clean shutdown (exit 0)
     restart: on-failure
-    
-    # Environment configuration
-    environment:
-      - CAMERA_ID=${CAMERA_ID:-camera1}
-      - CAMERA_NAME=${CAMERA_NAME:-OpenSentry Camera}
-      - MQTT_SERVER=${MQTT_SERVER:-tcp://127.0.0.1:1883}
-      - CAMERA_DEVICE=${CAMERA_DEVICE:-/dev/video0}
-      # Single secret for all credentials (recommended)
-      - OPENSENTRY_SECRET=${OPENSENTRY_SECRET:-}
-      # Legacy individual credentials (used if OPENSENTRY_SECRET not set)
-      - MQTT_USERNAME=${MQTT_USERNAME:-opensentry}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-opensentry}
-      - RTSP_USERNAME=${RTSP_USERNAME:-opensentry}
-      - RTSP_PASSWORD=${RTSP_PASSWORD:-opensentry}
-    
-    # Device access for webcam
+    network_mode: host
+    privileged: true
+    env_file:
+      - .env
     devices:
       - ${CAMERA_DEVICE:-/dev/video0}:${CAMERA_DEVICE:-/dev/video0}
-    
-    # Host network mode required for mDNS discovery
-    # Ports are exposed directly on host (8554, 1935, 8888, 8889)
-    network_mode: host
-    
-    # Privileged mode needed for Avahi/mDNS access
-    privileged: true
-    
-    # Security options
-    security_opt:
-      - no-new-privileges:true
-    
-    # Resource limits (adjust based on your hardware)
     deploy:
       resources:
         limits:
           memory: 512M
-        reservations:
-          memory: 128M
-
-# For running multiple camera nodes on same host, use different RTSP ports
-# by configuring MediaMTX (mount custom mediamtx.yml)

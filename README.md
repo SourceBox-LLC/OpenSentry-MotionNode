@@ -81,78 +81,55 @@ docker run hello-world
 
 ---
 
-## 🚀 Quick Start Guide (10 Minutes)
+## 🚀 Quick Start Guide (5 Minutes)
 
 ### Step 1: Download the Project
 
-**Option A - Using Git (recommended):**
 ```bash
 git clone https://github.com/SourceBox-LLC/OpenSentry-Node.git
 cd OpenSentry-Node
 ```
 
-**Option B - Download ZIP:**
-1. Go to [GitHub repo](https://github.com/SourceBox-LLC/OpenSentry-Node)
-2. Click green "Code" button → "Download ZIP"
-3. Unzip and open terminal in that folder
-
 ### Step 2: Plug In Your Camera
 
 Connect your USB webcam to the device.
 
-**Check it's detected:**
+### Step 3: Run the Setup Script
+
 ```bash
-ls /dev/video*
+chmod +x setup.sh
+./setup.sh
 ```
 
-You should see something like `/dev/video0`. If not, try a different USB port.
+**That's it!** The script will:
+- Detect your camera automatically
+- Ask you for a camera name
+- Ask for your security secret (from Command Center)
+- Build and start the camera node
 
-### Step 3: Create Configuration File
+### What You'll See
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                    Setup Complete!                            ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Camera Name:  Living Room                                    ║
+║  Device:       /dev/video0                                    ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Your camera should appear in the Command Center              ║
+║  dashboard within 30 seconds.                                 ║
+╚═══════════════════════════════════════════════════════════════╝
+```
+
+### Manual Setup (Alternative)
+
+If you prefer to configure manually:
 
 ```bash
 cp .env.example .env
-```
-
-### Step 4: Edit Configuration
-
-Open the `.env` file:
-```bash
-nano .env
-```
-
-**Minimum changes needed:**
-```bash
-# Give your camera a friendly name
-CAMERA_NAME=Living Room Camera
-
-# Set the security secret (MUST match Command Center!)
-OPENSENTRY_SECRET=paste-your-secret-here
-```
-
-Save and exit: `Ctrl+X`, then `Y`, then `Enter`
-
-### Step 5: Start the Camera Node
-
-```bash
+nano .env  # Edit CAMERA_NAME and OPENSENTRY_SECRET
 docker compose up --build
 ```
-
-**What you should see:**
-```
-[OpenSentry Node] Starting D-Bus...
-[OpenSentry Node] Starting Mosquitto MQTT broker...
-[OpenSentry Node] Starting MediaMTX RTSP server...
-[OpenSentry Node] Starting Camera Node...
-[Node] Camera ID: living-room-camera
-[Node] Broadcasting via mDNS...
-[Node] Status: streaming
-```
-
-### Step 6: Check It's Working
-
-Go to your Command Center dashboard. Within 30 seconds, your new camera should appear!
-
-**That's it!** 🎉
 
 ---
 
