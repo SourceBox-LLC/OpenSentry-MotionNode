@@ -8,6 +8,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <set>
 
 // mDNS includes (Avahi)
 #include <avahi-client/client.h>
@@ -279,15 +280,38 @@ CameraMDNSBroadcaster* g_mdns_broadcaster = nullptr;
 // ============================================================================
 // MQTT Callback Handler
 // ============================================================================
+// Valid commands whitelist for security
+const set<string> VALID_COMMANDS = {"start", "stop", "shutdown"};
+
 class MQTTCallback : public virtual mqtt::callback {
 public:
     void message_arrived(mqtt::const_message_ptr msg) override {
         string topic = msg->get_topic();
         string payload = msg->to_string();
 
+        // Input validation: limit payload size to prevent buffer attacks
+        if (payload.length() > 64) {
+            cerr << "[MQTT] SECURITY: Rejected oversized payload (" << payload.length() << " bytes)" << endl;
+            return;
+        }
+
+        // Input validation: only allow alphanumeric commands
+        for (char c : payload) {
+            if (!isalnum(c) && c != '_' && c != '-') {
+                cerr << "[MQTT] SECURITY: Rejected payload with invalid characters" << endl;
+                return;
+            }
+        }
+
         cout << "[MQTT] Received: " << topic << " = " << payload << endl;
 
         if (topic == "opensentry/" + CAMERA_ID + "/command") {
+            // Validate command against whitelist
+            if (VALID_COMMANDS.find(payload) == VALID_COMMANDS.end()) {
+                cerr << "[MQTT] SECURITY: Rejected unknown command: " << payload << endl;
+                return;
+            }
+            
             if (payload == "start") {
                 streaming = true;
                 cout << "[MQTT] Starting stream" << endl;
