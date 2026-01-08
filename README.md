@@ -172,6 +172,74 @@ After changes: `docker compose down && docker compose up -d`
 
 ---
 
+## 🪟 Windows Setup (WSL)
+
+Windows users can run camera nodes using WSL (Windows Subsystem for Linux).
+
+### Step 1: Install WSL
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+wsl --install
+```
+
+Restart your computer when prompted.
+
+### Step 2: Set Up Ubuntu
+
+After restart, Ubuntu will open automatically. Create a username and password when asked.
+
+### Step 3: Install Docker in WSL
+
+In the Ubuntu terminal:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+```
+
+Close and reopen Ubuntu.
+
+### Step 4: Connect USB Camera to WSL
+
+WSL needs extra setup to access USB devices. Install `usbipd`:
+
+**In PowerShell (as Administrator):**
+```powershell
+winget install usbipd
+```
+
+**In Ubuntu:**
+```bash
+sudo apt install linux-tools-generic hwdata
+sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/*-generic/usbip 20
+```
+
+**Attach your camera:**
+```powershell
+# List USB devices (in PowerShell)
+usbipd list
+
+# Attach camera to WSL (replace BUSID with your camera's ID)
+usbipd bind --busid <BUSID>
+usbipd attach --wsl --busid <BUSID>
+```
+
+### Step 5: Follow Quick Start
+
+Now follow **Steps 3-7** from the [Quick Start](#-quick-start) section above.
+
+```bash
+git clone https://github.com/SourceBox-LLC/OpenSentry-Node.git
+cd OpenSentry-Node
+chmod +x setup.sh && ./setup.sh
+```
+
+> **Note:** For easier USB camera access, consider running the Camera Node on a Raspberry Pi or dedicated Linux machine instead.
+
+---
+
 ## 📜 License
 
 MIT - Free for personal and commercial use.
