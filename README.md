@@ -6,29 +6,101 @@
 
 ## 🚀 Quick Start
 
-### 1. Install Docker
+### Step 1: Install Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-# Log out and back in
 ```
+Then log out and back in.
 
-### 2. Download & Run
+---
+
+### Step 2: Plug In Your Camera
+
+Connect a USB webcam to your device.
+
+---
+
+### Step 3: Download the Project
 
 ```bash
 git clone https://github.com/SourceBox-LLC/OpenSentry-Node.git
 cd OpenSentry-Node
+```
+
+---
+
+### Step 4: Run Setup
+
+```bash
 chmod +x setup.sh && ./setup.sh
 ```
 
-The setup will ask for:
-- **Camera name** (e.g., "Front Door")
-- **Security secret** (copy from Command Center setup)
+You'll see:
+```
+╔═══════════════════════════════════════════════════════════════╗
+║           OpenSentry Camera Node - Quick Setup                ║
+╚═══════════════════════════════════════════════════════════════╝
 
-### 3. Done!
+✅ Docker found
 
-Your camera appears in the [Command Center](https://github.com/SourceBox-LLC/OpenSentry-Command) within 30 seconds.
+🎥 Detecting cameras...
+   Found: /dev/video0 /dev/video1
+```
+
+---
+
+### Step 5: Name Your Camera
+
+Choose a friendly name for the dashboard:
+
+```
+📝 Let's configure your Camera Node...
+
+Camera name [raspberrypi]: Front Door
+Camera device [/dev/video0]: 
+```
+
+---
+
+### Step 6: Enter Security Secret
+
+Paste the `OPENSENTRY_SECRET` from your Command Center setup:
+
+```
+🔐 Enter the OPENSENTRY_SECRET from your Command Center.
+   (Run 'cat .env' on the Command Center to find it)
+
+OPENSENTRY_SECRET: 7de776c167242fbf10da85c3d182a9fb...
+```
+
+---
+
+### Step 7: Done!
+
+The camera node builds and starts automatically:
+
+```
+🚀 Building and starting Camera Node...
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    Setup Complete!                            ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Camera Name:  Front Door                                     ║
+║  Device:       /dev/video0                                    ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Your camera should appear in the Command Center              ║
+║  dashboard within 30 seconds.                                 ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Commands:                                                    ║
+║    View logs:    docker compose logs -f                       ║
+║    Stop:         docker compose down                          ║
+║    Restart:      docker compose restart                       ║
+╚═══════════════════════════════════════════════════════════════╝
+```
+
+**Check your [Command Center](https://github.com/SourceBox-LLC/OpenSentry-Command) dashboard - your camera will appear!** 🎉
 
 ---
 
@@ -37,15 +109,15 @@ Your camera appears in the [Command Center](https://github.com/SourceBox-LLC/Ope
 Works great on **Pi 4** and **Pi 5**. Use 64-bit Raspberry Pi OS.
 
 ```bash
-# SSH into your Pi, then:
+# SSH into your Pi
+ssh pi@raspberrypi.local
+
+# Install Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker pi
 sudo reboot
 
-# After reboot:
-git clone https://github.com/SourceBox-LLC/OpenSentry-Node.git
-cd OpenSentry-Node
-chmod +x setup.sh && ./setup.sh
+# After reboot, follow Steps 3-7 above
 ```
 
 ---
