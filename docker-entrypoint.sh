@@ -38,6 +38,31 @@ else
 fi
 
 # ============================================================================
+# SSL Certificate Generation for RTSPS
+# ============================================================================
+CERT_DIR="/app/certs"
+CERT_FILE="$CERT_DIR/server.crt"
+KEY_FILE="$CERT_DIR/server.key"
+
+if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
+    echo "[OpenSentry Node] 🔐 Generating SSL certificates for RTSPS..."
+    mkdir -p "$CERT_DIR"
+    
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "$KEY_FILE" \
+        -out "$CERT_FILE" \
+        -subj "/C=US/ST=Local/L=Local/O=OpenSentry/OU=Camera/CN=$CAMERA_ID" \
+        -addext "subjectAltName=DNS:$CAMERA_ID,DNS:localhost,IP:127.0.0.1" \
+        2>/dev/null
+    
+    chmod 644 "$KEY_FILE"
+    chmod 644 "$CERT_FILE"
+    echo "[OpenSentry Node] ✅ SSL certificates generated"
+else
+    echo "[OpenSentry Node] ✅ SSL certificates found"
+fi
+
+# ============================================================================
 # Service Startup
 # ============================================================================
 
@@ -71,19 +96,24 @@ else
     echo "[Warning] Mosquitto failed to start - continuing without local MQTT"
 fi
 
-# Generate MediaMTX config with credentials baked in (env var substitution can be unreliable)
+# Generate MediaMTX config with RTSPS encryption
 cat > /tmp/mediamtx.yml << EOF
 logLevel: info
 logDestinations: [stdout]
-rtsp: yes
-protocols: [tcp]
+
+# RTSP/RTSPS settings
 rtspAddress: :8554
-rtmp: yes
-rtmpAddress: :1935
-hls: yes
-hlsAddress: :8888
-webrtc: yes
-webrtcAddress: :8889
+rtspsAddress: :8322
+rtspTransports: [tcp]
+rtspEncryption: optional
+rtspServerKey: ${KEY_FILE}
+rtspServerCert: ${CERT_FILE}
+
+# Disable other protocols
+rtmp: no
+hls: no
+webrtc: no
+
 paths:
   all:
     source: publisher

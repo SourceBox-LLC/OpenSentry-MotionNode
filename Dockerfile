@@ -63,7 +63,7 @@ RUN apt-get update && apt-get install -y \
 
 # Download and install MediaMTX
 # Auto-detect architecture: map Docker's TARGETPLATFORM to MediaMTX naming
-ARG MEDIAMTX_VERSION=1.4.2
+ARG MEDIAMTX_VERSION=1.11.0
 ARG TARGETARCH
 RUN ARCH=$(dpkg --print-architecture) && \
     echo "Detected architecture: $ARCH" && \
@@ -94,17 +94,19 @@ COPY mediamtx.yml /etc/mediamtx.yml
 COPY mosquitto.conf /etc/mosquitto/mosquitto.conf
 
 # Expose ports
-# 1883 - MQTT (bundled Mosquitto broker)
+# 1883 - MQTT (localhost only, internal)
+# 8883 - MQTTS (TLS encrypted, external)
 # 8554 - RTSP
+# 8322 - RTSPS (encrypted)
 # 1935 - RTMP (optional)
 # 8888 - HLS (optional)
 # 8889 - WebRTC (optional)
-EXPOSE 1883 8554 1935 8888 8889
+EXPOSE 8883 8554 8322 1935 8888 8889
 
 # Environment variables for configuration
 ENV CAMERA_ID=camera1
 ENV CAMERA_NAME="OpenSentry Camera"
-ENV MQTT_SERVER=tcp://localhost:1883
+ENV MQTT_SERVER=tcp://localhost:1884
 ENV CAMERA_DEVICE=/dev/video0
 
 ENTRYPOINT ["docker-entrypoint.sh"]

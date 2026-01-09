@@ -2,6 +2,8 @@
 
 **Turn any USB webcam into a network security camera.**
 
+**🔒 Fully Encrypted:** RTSPS video streams, MQTT over TLS
+
 ---
 
 ## 🚀 Quick Start
@@ -91,6 +93,8 @@ The camera node builds and starts automatically:
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Camera Name:  Front Door                                     ║
 ║  Device:       /dev/video0                                    ║
+║  Stream:       RTSPS (encrypted) on port 8322                 ║
+║  MQTT:         TLS (encrypted) on port 8883                   ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Your camera should appear in the Command Center              ║
 ║  dashboard within 30 seconds.                                 ║
@@ -174,6 +178,32 @@ OPENSENTRY_SECRET=your-secret-from-command-center
 ```
 
 After changes: `docker compose down && docker compose up -d`
+
+---
+
+## 🔒 Security Features
+
+All communications are encrypted:
+
+| Protocol | Port | Description |
+|----------|------|-------------|
+| **RTSPS** | 8322 | Video stream with TLS encryption |
+| **MQTTS** | 8883 | Control commands with TLS encryption |
+| **RTSP** | 1884 | Internal only (localhost) |
+
+### How It Works
+
+1. **SSL certificates** are auto-generated on first run
+2. **Credentials** are derived from the shared `OPENSENTRY_SECRET`
+3. **Video streams** are encrypted using RTSPS (RTSP over TLS)
+4. **Commands** (start/stop/shutdown) are sent over encrypted MQTT
+
+### Input Validation
+
+The camera node validates all incoming commands:
+- Payload size limit (64 bytes max)
+- Character whitelist (alphanumeric only)
+- Command whitelist (start, stop, shutdown)
 
 ---
 

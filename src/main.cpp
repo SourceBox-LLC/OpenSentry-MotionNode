@@ -158,9 +158,10 @@ private:
             // Build TXT records - store in persistent strings
             string txt_camera_id = "camera_id=" + camera_id;
             string txt_name = "name=" + service_name;
-            string txt_rtsp_port = "rtsp_port=" + to_string(rtsp_port);
+            string txt_rtsps_port = "rtsps_port=" + to_string(rtsp_port);
             string txt_rtsp_path = "rtsp_path=" + rtsp_path;
             string txt_status = "status=" + current_status;
+            string txt_mqtt_port = "mqtt_port=8883";
             
             int ret = avahi_entry_group_add_service(
                 group,
@@ -174,11 +175,13 @@ private:
                 rtsp_port,
                 txt_camera_id.c_str(),
                 txt_name.c_str(),
-                txt_rtsp_port.c_str(),
+                txt_rtsps_port.c_str(),
                 txt_rtsp_path.c_str(),
                 txt_status.c_str(),
+                txt_mqtt_port.c_str(),
                 "type=camera",
-                "protocol=rtsp",
+                "protocol=rtsps",
+                "mqtt_tls=true",
                 nullptr
             );
             
@@ -231,7 +234,7 @@ public:
         cout << "[mDNS] Broadcaster started for camera: " << camera_id << endl;
         cout << "[mDNS]   Service: " << service_name << endl;
         cout << "[mDNS]   Type: _opensentry._tcp" << endl;
-        cout << "[mDNS]   Port: " << rtsp_port << endl;
+        cout << "[mDNS]   RTSPS Port: " << rtsp_port << " (encrypted)" << endl;
         
         return true;
     }
@@ -387,7 +390,7 @@ int main()
     CameraMDNSBroadcaster mdns_broadcaster(
         CAMERA_ID,                    // Camera ID
         CAMERA_NAME,                  // Service name (friendly name)
-        8554,                         // RTSP port
+        8322,                         // RTSPS port (encrypted)
         CAMERA_ID                     // RTSP path
     );
     g_mdns_broadcaster = &mdns_broadcaster;

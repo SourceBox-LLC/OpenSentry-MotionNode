@@ -32,6 +32,13 @@ if [ "$remove_config" = "y" ] || [ "$remove_config" = "Y" ]; then
 fi
 
 echo ""
+read -p "Remove SSL certificates? (y/N): " remove_certs
+if [ "$remove_certs" = "y" ] || [ "$remove_certs" = "Y" ]; then
+    rm -rf ./certs
+    echo "✅ SSL certificates removed"
+fi
+
+echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║                  Teardown Complete!                           ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
