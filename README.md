@@ -66,11 +66,13 @@ Camera device [/dev/video0]:
 
 ### Step 6: Enter Security Secret
 
-Paste the `OPENSENTRY_SECRET` from your Command Center setup:
+Paste the `OPENSENTRY_SECRET` from your Command Center:
+
+1. Log into Command Center → Click **⚙️ Settings** → Copy the secret
 
 ```
 🔐 Enter the OPENSENTRY_SECRET from your Command Center.
-   (Run 'cat .env' on the Command Center to find it)
+   (Go to Settings in the Command Center dashboard to find it)
 
 OPENSENTRY_SECRET: 7de776c167242fbf10da85c3d182a9fb...
 ```
@@ -136,6 +138,9 @@ docker compose restart
 
 # Rebuild after changes
 docker compose up --build -d
+
+# Complete teardown
+chmod +x teardown.sh && ./teardown.sh
 ```
 
 ---
@@ -237,6 +242,20 @@ chmod +x setup.sh && ./setup.sh
 ```
 
 > **Note:** For easier USB camera access, consider running the Camera Node on a Raspberry Pi or dedicated Linux machine instead.
+
+---
+
+## 🗑️ Uninstall
+
+To completely remove the Camera Node:
+
+```bash
+chmod +x teardown.sh && ./teardown.sh
+```
+
+You'll be prompted to remove:
+- Docker containers and images
+- Configuration files
 
 ---
 
