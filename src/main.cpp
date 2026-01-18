@@ -33,9 +33,24 @@ extern "C" {
 using namespace cv;
 using namespace std;
 
-// Global flags
-atomic<bool> streaming(true);
+// Global variables
 atomic<bool> running(true);
+atomic<bool> streaming(true);  // Start streaming immediately
+Mat lastFrame;                  // Store the last frame for pause state
+atomic<bool> motion_active(false);  // Track motion state
+atomic<time_t> motion_start_time(0); // Track when motion started
+
+// Helper function to create JSON status message
+string create_status_json(const string& status) {
+    time_t now = time(nullptr);
+    string json = "{"
+        "\"status\": \"" + status + "\","
+        "\"node_type\": \"motion\","
+        "\"capabilities\": [\"streaming\", \"motion_detection\"],"
+        "\"timestamp\": " + to_string(now) +
+        "}";
+    return json;
+}
 
 // Configuration - read from environment variables with defaults
 string getEnvOrDefault(const char* name, const string& defaultValue) {
@@ -180,6 +195,8 @@ private:
                 txt_status.c_str(),
                 txt_mqtt_port.c_str(),
                 "type=camera",
+                "node_type=motion",                       // Node type identifier
+                "capabilities=streaming,motion_detection", // Node capabilities
                 "protocol=rtsps",
                 "mqtt_tls=true",
                 nullptr
@@ -234,6 +251,8 @@ public:
         cout << "[mDNS] Broadcaster started for camera: " << camera_id << endl;
         cout << "[mDNS]   Service: " << service_name << endl;
         cout << "[mDNS]   Type: _opensentry._tcp" << endl;
+        cout << "[mDNS]   Node Type: motion" << endl;
+        cout << "[mDNS]   Capabilities: streaming, motion_detection" << endl;
         cout << "[mDNS]   RTSPS Port: " << rtsp_port << " (encrypted)" << endl;
         
         return true;
@@ -345,7 +364,8 @@ void mqtt_heartbeat_thread(mqtt::async_client& mqtt_client) {
     while (running) {
         if (mqtt_client.is_connected()) {
             string status = streaming ? "streaming" : "idle";
-            mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", status, 0, false);
+            string json_status = create_status_json(status);
+            mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", json_status, 0, false);
         }
         this_thread::sleep_for(chrono::seconds(5));
     }
@@ -357,6 +377,13 @@ int main()
     CAMERA_ID = getEnvOrDefault("CAMERA_ID", "camera1");
     CAMERA_NAME = getEnvOrDefault("CAMERA_NAME", "OpenSentry Camera 1");
     MQTT_SERVER = getEnvOrDefault("MQTT_SERVER", "tcp://localhost:1883");
+    
+    // Convert tls:// to ssl:// for MQTT library compatibility
+    if (MQTT_SERVER.find("tls://") == 0) {
+        MQTT_SERVER = "ssl://" + MQTT_SERVER.substr(6);
+        cout << "[Config] Converting TLS URL to SSL for MQTT library" << endl;
+    }
+    
     CLIENT_ID = "opensentry_node_" + CAMERA_ID;
     
     // Credential derivation: use OPENSENTRY_SECRET if set, otherwise fall back to individual credentials
@@ -413,6 +440,15 @@ int main()
     connOpts.set_automatic_reconnect(1, 30); // Min 1s, max 30s backoff
     connOpts.set_user_name(MQTT_USERNAME);
     connOpts.set_password(MQTT_PASSWORD);
+    
+    // Configure TLS if using tls:// or ssl:// protocol
+    if (MQTT_SERVER.find("tls://") == 0 || MQTT_SERVER.find("ssl://") == 0) {
+        cout << "[MQTT] Configuring TLS connection" << endl;
+        mqtt::ssl_options sslopts;
+        sslopts.set_verify(0); // Don't verify the server certificate
+        sslopts.set_enable_server_cert_auth(false);
+        connOpts.set_ssl(sslopts);
+    }
 
     bool mqtt_connected = false;
     try {
@@ -425,7 +461,7 @@ int main()
         cout << "[MQTT] Subscribed to commands" << endl;
 
         // Announce online
-        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "online", 0, false);
+        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("online"), 0, false);
         if(mdns_available) mdns_broadcaster.update_status("online");
         mqtt_connected = true;
 
@@ -459,7 +495,7 @@ int main()
         cerr << endl;
         cerr << "========================================" << endl;
         cerr << endl;
-        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_camera", 0, false);
+        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("error_no_camera"), 0, false);
         if(mdns_available) mdns_broadcaster.update_status("error_no_camera");
         
         // Clean shutdown
@@ -549,7 +585,7 @@ int main()
             cerr << endl;
             
             // Clean shutdown
-            if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_no_rtsp_server", 0, false);
+            if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("error_no_rtsp_server"), 0, false);
             if(mdns_available) mdns_broadcaster.update_status("error");
             running = false;
             if(mqtt_connected) heartbeat.join();
@@ -580,7 +616,7 @@ int main()
         cerr << endl;
         
         // Clean shutdown
-        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "error_stream_init", 0, false);
+        if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("error_stream_init"), 0, false);
         if(mdns_available) mdns_broadcaster.update_status("error");
         running = false;
         if(mqtt_connected) heartbeat.join();
@@ -594,7 +630,7 @@ int main()
     }
 
     cout << "[Stream] Streaming to: " << rtspURL << endl;
-    if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "streaming", 0, false);
+    if(mqtt_connected) mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("streaming"), 0, false);
     if(mdns_available) mdns_broadcaster.update_status("streaming");
 
     AVFrame *frame = av_frame_alloc();
@@ -613,6 +649,8 @@ int main()
     Mat cvFrame;
     Mat lastFrame;  // Store last frame for pause state
     int64_t frameNum = 0;
+    Mat prev_gray;  // Store previous grayscale frame for motion detection
+    bool first_frame = true;  // Flag for first frame initialization
 
     while (running) {
         camera >> cvFrame;
@@ -621,6 +659,81 @@ int main()
             cerr << "[ERROR] Empty frame" << endl;
             break;
         }
+
+        //Motion Detection
+        Mat gray, frame_diff, thresh;
+        cvtColor(cvFrame, gray, COLOR_BGR2GRAY);
+        GaussianBlur(gray, gray, Size(21, 21), 0);
+
+        if (!first_frame)
+        {
+            absdiff(prev_gray, gray, frame_diff);
+            threshold(frame_diff, thresh, 25, 255, THRESH_BINARY);
+            dilate(thresh, thresh, Mat(), Point(-1, -1), 2);
+
+            vector<vector<Point>> contours;
+            findContours(thresh, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+            bool motion_detected = false;
+            vector<Point> all_points;
+            for (const auto& c: contours)
+            {
+                if (contourArea(c) >= 500)
+                {
+                    motion_detected = true;
+                    all_points.insert(all_points.end(), c.begin(), c.end());
+                }
+            }
+            if (motion_detected)
+            {
+                Rect combined_rect = boundingRect(all_points);
+                rectangle(cvFrame, combined_rect, Scalar(0, 0, 255), 2);
+
+                // Handle motion start event
+                if (!motion_active)
+                {
+                    motion_active = true;
+                    motion_start_time = time(nullptr);
+                    
+                    // Publish motion start event with metadata
+                    if (mqtt_connected)
+                    {
+                        // Create JSON payload with motion details
+                        string motion_payload = "{"
+                            "\"event\": \"motion_start\","
+                            "\"timestamp\": " + to_string(motion_start_time) + ","
+                            "\"area_x\": " + to_string(combined_rect.x) + ","
+                            "\"area_y\": " + to_string(combined_rect.y) + ","
+                            "\"area_width\": " + to_string(combined_rect.width) + ","
+                            "\"area_height\": " + to_string(combined_rect.height) + ""
+                            "}";
+                        mqtt_client.publish("opensentry/" + CAMERA_ID + "/motion", motion_payload, 0, false);
+                        cout << "[Motion] Detected - published start event" << endl;
+                    }
+                }
+            }
+            else if (motion_active)
+            {
+                // No motion detected but was previously active - motion ended
+                motion_active = false;
+                time_t motion_end_time = time(nullptr);
+                int duration = motion_end_time - motion_start_time;
+                
+                // Publish motion end event
+                if (mqtt_connected)
+                {
+                    string motion_payload = "{"
+                        "\"event\": \"motion_end\","
+                        "\"timestamp\": " + to_string(motion_end_time) + ","
+                        "\"duration\": " + to_string(duration) + ""
+                        "}";
+                    mqtt_client.publish("opensentry/" + CAMERA_ID + "/motion", motion_payload, 0, false);
+                    cout << "[Motion] Ended after " << duration << " seconds" << endl;
+                }
+            }
+        }
+        prev_gray = gray.clone();
+        if (first_frame) first_frame = false;
 
         // Store the current frame for pause state
         if (streaming) {
@@ -682,7 +795,7 @@ cleanup:
     // Update status to offline
     if(mdns_available) mdns_broadcaster.update_status("offline");
     if(mqtt_connected) {
-        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", "offline", 0, false);
+        mqtt_client.publish("opensentry/" + CAMERA_ID + "/status", create_status_json("offline"), 0, false);
         mqtt_client.disconnect()->wait();
         heartbeat.join();
     }

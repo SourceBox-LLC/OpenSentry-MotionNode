@@ -106,7 +106,7 @@ EXPOSE 8883 8554 8322 1935 8888 8889
 # Environment variables for configuration
 ENV CAMERA_ID=camera1
 ENV CAMERA_NAME="OpenSentry Camera"
-ENV MQTT_SERVER=tcp://localhost:1884
+ENV MQTT_SERVER=tls://localhost:8883
 ENV CAMERA_DEVICE=/dev/video0
 
 ENTRYPOINT ["docker-entrypoint.sh"]
