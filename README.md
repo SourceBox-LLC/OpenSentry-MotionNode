@@ -471,10 +471,11 @@ MIT - Free for personal and commercial use.
 
 ## 🔗 Related Projects
 
-- **[OpenSentry Command Center](https://github.com/SourceBox-LLC/OpenSentry-Command)** - Central dashboard with motion alerts
-- **[OpenSentry Node](https://github.com/SourceBox-LLC/OpenSentry-Node)** - Basic camera node without motion detection
-- **[OpenSentry AI](https://github.com/SourceBox-LLC/OpenSentry-AI)** - AI-powered object detection (coming soon)
+- **[OpenSentry Command Center](https://github.com/SourceBox-LLC/OpenSentry-Command)** - Central dashboard with detection alerts
+- **[OpenSentry Node](https://github.com/SourceBox-LLC/OpenSentry-Node)** - Basic camera node (streaming only)
+- **[OpenSentry Face Detection Node](https://github.com/SourceBox-LLC/OpenSentry-FaceDetectionNode)** - Real-time face detection
+- **[OpenSentry Object Detection Node](https://github.com/SourceBox-LLC/OpenSentry-ObjectDetectionNode)** - AI-powered object detection (YOLOv4)
 
 ---
 
-**Built with ❤️ and OpenCV by the OpenSentry Team**
+**[OpenSentry Command Center](https://github.com/SourceBox-LLC/OpenSentry-Command)** · Made with ❤️ by the OpenSentry Team
